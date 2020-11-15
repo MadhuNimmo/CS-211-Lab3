@@ -37,15 +37,10 @@ int main(int argc, char * argv[]) {
   unsigned long int size; /* Elements in 'marked' */
   unsigned long int local_prime_size;
   //newly added variables
-  unsigned long int
-  unsigned long int
-  unsigned long int
-  int64_t high_0;
-  int64_t cSize; /* Size of cache */
-  int64_t loops = 0, limit;
-  int64_t nSize;
-  unsigned long int prevLow;
-  unsigned long int prevHigh;
+  unsigned long int block_size = 1048576;
+  unsigned long long int block_low_value = low_value;
+  unsigned long long int block_high_value = block_low_value + 2 * (block_size - 1);
+  
   MPI_Init( & argc, & argv);
 
   /* Start the timer */
@@ -110,21 +105,31 @@ int main(int argc, char * argv[]) {
 
   } while (prime * prime <= n);
 
-  index = 0;
-  prime = 3;
-
-  do {
-    if (prime * prime > low_value)
-      first = (prime * prime - low_value) / 2;
-    else {
-      if (!(low_value % prime)) first = 0;
-      else first = (prime - low_value % prime + low_value / prime % 2 * prime) / 2;
-    }
-    for (i = first; i < size; i += prime) marked[i] = 1;
-    while (local_prime_marked[++index]);
-    a
-    prime = 2 + index;
-  } while (prime * prime <= n);
+do
+{
+	index = 0;
+	prime = 3;
+	while (prime * prime <= block_high_value)
+	{
+		if (prime * prime > block_low_value)
+		first = (prime * prime - block_low_value) / 2;
+		else
+		{
+		if ((block_low_value % prime) == 0)
+			first = 0;
+		else
+			first = (prime - (block_low_value % prime) + block_low_value / prime % 2 * prime) / 2;
+		}
+		for (i = first + (block_low_value - low_value) / 2; i <= (block_high_value - low_value) / 2; i += prime)
+		marked[i] = 1;
+		while(local_prime_marked[++index] == 1);
+		prime = index + 2;
+	}
+	block_low_value = block_high_value + 2;
+	block_high_value = block_low_value + 2 * (block_size - 1);
+	if (block_high_value > high_value)
+		block_high_value = high_value;
+} while (block_low_value <= high_value);
   count = 0;
   for (i = 0; i < size; i++)
     if (!marked[i]) count++;
