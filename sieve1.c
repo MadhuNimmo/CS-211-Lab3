@@ -39,19 +39,72 @@ int main (int argc, char *argv[])
    }
 
    n = atoll(argv[1]);
-   /* Stop the timer */
+   /* Figure out this process's share of the array, as
+       well as the integers represented by the first and
+       last array elements */
 
-   /* Add you code here  */
+    low_value = 3 + 2 * (id*((n / 2) - 1) / p);
+    high_value = 3 + 2 * (((id + 1)*(n / 2 - 1) / p) - 1);
+    size = high_value - low_value + 1;
+
+
+   /* Bail out if all the primes used for sieving are
+       not all held by process 0 */
+
+    proc0_size = ((n / 2) - 1) / p;
+
+    if ((3 + 2 * proc0_size) < (long long)(int)sqrt((double)n)) {
+        if (!id) printf("Too many processes\n");
+        MPI_Finalize();
+        exit(1);
+    }
+
+    /* Allocate this process's share of the array. */
+
+    marked = (char *) malloc(size);
+
+    if (marked == NULL) {
+        printf("Cannot allocate enough memory\n");
+        MPI_Finalize();
+        exit(1);
+    }
+
+   /* Functionality  */
    
-
-
-
-
-
-
-
-
-
+	for (i = 0; i < size; i++) marked[i] = 0;
+	if (!id) index = 0;
+	prime = 3;
+	do {
+		if (prime * prime > low_value)
+			first = (prime * prime - low_value) / 2;
+		else {
+			if (low_value % prime) == 0)
+				first = 0;
+			else {
+				if ((low_value / prime) % 2 != 0) {
+					first = prime - (low_value % prime) / 2;
+				}
+				else {
+					first = (prime - low_value % prime) / 2;
+				}
+			}
+		}
+		for (i = first; i < size; i += prime) marked[i] = 1;
+		if (!id) {
+			while (marked[++index]);
+			prime = 2 * index + 3;
+		}
+		if (p > 1) MPI_Bcast(&prime, 1, MPI_INT, 0, MPI_COMM_WORLD);
+	} while (prime * prime <= n);
+	if (!id)
+		count = 1;
+	else
+		count = 0;
+	for (i = 0; i < size; i++)
+		if (!marked[i]) count++;
+	
+	if (p > 1) MPI_Reduce(&count, &global_count, 1, MPI_INT, MPI_SUM,
+		0, MPI_COMM_WORLD);
 
 
    elapsed_time += MPI_Wtime();

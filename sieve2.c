@@ -33,6 +33,12 @@ int main (int argc, char *argv[])
    unsigned long int  local_prime;        /* Current prime */
    unsigned long int    size;         /* Elements in 'marked' */
    unsigned long int  local_prime_size;
+   //newly added
+   int64_t         low_0;
+	int64_t         high_0;
+	int64_t         size_0;
+	int64_t    prime_0;
+	int64_t    first_0;
 
 
    MPI_Init (&argc, &argv);
@@ -56,21 +62,96 @@ int main (int argc, char *argv[])
       well as the integers represented by the first and
       last array elements */
 
-   /* Add you code here  */
+   low_value = 3 + 2 * (id*((n / 2) - 1) / p);
+	high_value = 3 + 2 * (((id + 1)*(n / 2 - 1) / p) - 1);
+	size = (high_value - low_value) / 2 + 1;
+   low_0 = 3;
+	high_0 = (int)sqrt((double)n);
+	size_0 = (high_0 - low_0) / 2 + 1;
+
+   
+   /* Bail out if all the primes used for sieving are
+   not all held by process 0 */
+
+	proc0_size = ((n / 2) - 1) / p;
+
+	if ((3 + 2 * proc0_size) < (int)sqrt((double)n)) {
+		if (!id) printf("Too many processes\n");
+		MPI_Finalize();
+		exit(1);
+	}
 
 
+   /* Allocate this process's share of the array. */
+   marked = (char *)malloc(size);
+
+	if (marked == NULL) {
+		printf("Cannot allocate enough memory\n");
+		MPI_Finalize();
+		exit(1);
+	}
+
+	marked_0 = (char *)malloc(size_0);
+	if (marked_0 == NULL) {
+		printf("Cannot allocate enough memory for part2\n");
+		MPI_Finalize();
+		exit(1);
+	}
+   index = 0;
 
 
+	for (i = 0; i < size; i++) marked[i] = 0;
+	for (i = 0; i < size_0; i++) marked_0[i] = 0;
+	
+	prime = 3;
+	do {
+		if (prime * prime > low_value)
+			first = (prime * prime - low_value) / 2;
+		else {
+			if ((low_value % prime) == 0)
+				first = 0;
+			else
+			{
+				if ((low_value / prime) % 2 != 0)
+				{
+					first = prime - (low_value % prime) / 2;
+				}
+				else
+				{
+					first = (prime - low_value % prime) / 2;
+				}
+			}
+		}
+		for (i = first; i < size; i += prime) marked[i] = 1;
 
+		
+		if (!id) {
+			while (marked[++index]);
+			prime = 2 * index + 3;
+		}
+		else
+		{
+			
+			first_0 = (prime * prime - low_0) / 2;
+			for (i = first_0; i < size_0; i += prime) marked_0[i] = 1;
+			while (marked_0[++index]);
+			prime = 2 * index + 3;
+		}
+		
+	} while (prime*prime <= n);
+	if (!id)
+		count = 1;
+	else
+		count = 0;
+	for (i = 0; i < size; i++)
+		if (!marked[i])
+		{
+			count++;
+			
+		}
 
-
-
-
-
-
-
-
-
+	if (p > 1) MPI_Reduce(&count, &global_count, 1, MPI_INT, MPI_SUM,
+		0, MPI_COMM_WORLD);
 
    /* Stop the timer */
 
