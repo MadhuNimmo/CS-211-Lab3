@@ -104,9 +104,13 @@ int main(int argc, char * argv[]) {
     prime = 2 * index;
 
   } while (prime * prime <= n);
-
-do
-{
+  
+  block_size = 1048576;
+  block_low_value = low_value;
+  block_high_value = block_low_value + 2 * (block_size - 1);
+  
+  do
+  {
 	index = 0;
 	prime = 3;
 	while (prime * prime <= block_high_value)
@@ -129,7 +133,7 @@ do
 	block_high_value = block_low_value + 2 * (block_size - 1);
 	if (block_high_value > high_value)
 		block_high_value = high_value;
-} while (block_low_value <= high_value);
+  } while (block_low_value <= high_value);
   count = 0;
   for (i = 0; i < size; i++)
     if (!marked[i]) count++;
